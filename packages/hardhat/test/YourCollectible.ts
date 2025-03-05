@@ -10,7 +10,7 @@ describe("YourCollectible", function () {
   let yourCollectible: YourCollectible, yourCollectibleAddress: string;
   let yourContract: YourContract, yourContractAddress: string;
   let owner: HardhatEthersSigner, user1: HardhatEthersSigner, user2: HardhatEthersSigner, user3: HardhatEthersSigner;
-  let user2TokenId_0: number;
+  let tokenId_0: number;
   before(async () => {
     // Get the Signers object from ethers
     [owner, user1, user2, user3] = await ethers.getSigners();
@@ -35,50 +35,49 @@ describe("YourCollectible", function () {
   });
 
   describe("Mint token", function () {
-    it("Should not allow minting to contract address without implementing IERC721Receiver", async function () {
-      await expect(yourCollectible.connect(user1).mintItem(yourContractAddress, "https://www.example.com/nft1")).to.be
-        .reverted;
-    });
-
     it("Should allow minting to an externally owned account EOA", async function () {
+      // user1 is minting a token for user2
       const txn = await yourCollectible.connect(user1).mintItem(user2.address, "https://www.example.com/nft1");
-      const receipt = await txn.wait(); // Wait for transaction to be mined
 
       // Unlike view functions, transactions do not return values directly because they need to be mined on the blockchain
-      // Instead we'll retrieve the event emitted by the transaction
-
-      // Extract event data
+      // Instead we'll retrieve the event emitted by the transaction. It is included in the transaction receipts.
+      const receipt = await txn.wait();
       const transferEventLog = receipt!.logs.find(l => (l as EventLog).fragment.name === "Transfer") as EventLog;
       const iface = new ethers.Interface([
         "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
       ]);
       const decodedLog = iface.decodeEventLog("Transfer", transferEventLog.data, transferEventLog.topics);
 
-      user2TokenId_0 = decodedLog.tokenId as number;
+      tokenId_0 = decodedLog.tokenId as number;
 
       // get the owner of the token
-      expect(await yourCollectible.connect(user1).ownerOf(user2TokenId_0)).to.equal(user2.address);
+      expect(await yourCollectible.connect(user1).ownerOf(tokenId_0)).to.equal(user2.address);
       expect(await yourCollectible.connect(user1).balanceOf(user2.address)).to.equal(1);
+    });
+
+    it("Should not allow minting to contract address without implementing IERC721Receiver", async function () {
+      await expect(yourCollectible.connect(user1).mintItem(yourContractAddress, "https://www.example.com/nft1")).to.be
+        .reverted;
     });
   });
 
   describe("Transfer", function () {
     it("Should not allow transfer from non-owner user1", async function () {
-      await expect(yourCollectible.connect(user1).transferFrom(user2.address, user3.address, user2TokenId_0)).to.be
-        .reverted;
+      // TODO: write a test to check that user 1 cannot transfer the token they created for user 2
+
+      expect(true).to.equal(false);
     });
 
     it("Should allow transfer from non-owner user1 after approving them", async function () {
-      // approve user1
-      await yourCollectible.connect(user2).approve(user1.address, user2TokenId_0);
+      // TODO: call yourCollectible SM and have user 2 to approve/authorize user 1 to transfer the token on their behalf
 
-      const txn = await yourCollectible.connect(user1).transferFrom(user2.address, user3.address, user2TokenId_0);
-      //   await txn.wait(); // Wait for transaction to be mined
+      // TODO: call yourCollectibe and have user 1 transfer user 2 token to user 3
 
-      // get the owner of the token
-      expect(await yourCollectible.connect(user1).ownerOf(user2TokenId_0)).to.equal(user3.address);
-      expect(await yourCollectible.connect(user1).balanceOf(user2.address)).to.equal(0);
-      expect(await yourCollectible.connect(user1).balanceOf(user3.address)).to.equal(1);
+      // TODO: write a test to check that the owner of the token is currently user 3
+
+      // TODO: write a test to check that user 2 has no token that they own
+
+      expect(true).to.equal(false);
     });
   });
 });

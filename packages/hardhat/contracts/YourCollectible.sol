@@ -17,9 +17,13 @@ contract YourCollectible is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable 
 
     function mintItem(address to, string memory uri) public returns (uint256) {
         uint256 tokenId = tokenIdCounter;
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-        tokenIdCounter += 1;
+
+        // TODO: use _mint to create/mint an NFT
+
+        // TODO: use _setTokenURI to set the metadata source for the NFT
+
+        // TODO: increament the tokenIdCounter
+
         return tokenId;
     }
 
