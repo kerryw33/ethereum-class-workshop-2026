@@ -4,12 +4,17 @@ import { Address, AddressInput } from "~~/components/scaffold-eth";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export const NFTCard = ({ nft }: { nft: Collectible }) => {
-  const [transferToAddress, setTransferToAddress] = useState("");
+  const [toAddress, setToAddress] = useState("");
+  const [isTransferChecked, setIsTransferChecked] = useState(true);
 
-  const { writeContractAsync } = useScaffoldWriteContract("YourCollectible");
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "YourCollectible" });
+
+  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIsTransferChecked(event.target.checked);
+  };
 
   return (
-    <div className="card card-compact bg-base-100 shadow-lg w-[300px] shadow-secondary">
+    <div className="card card-compact bg-base-100 shadow-lg aspect-video shadow-secondary h-fit">
       <figure className="relative">
         {/* eslint-disable-next-line  */}
         <img src={nft.image} alt="NFT Image" className="h-60 min-w-full" />
@@ -36,11 +41,14 @@ export const NFTCard = ({ nft }: { nft: Collectible }) => {
           <Address address={nft.owner} />
         </div>
         <div className="flex flex-col my-2 space-y-1">
-          <span className="text-lg font-semibold mb-1">Transfer To: </span>
+          <div className="flex flex-row justify-between items-center">
+            <span className="text-lg font-semibold mb-1">{isTransferChecked ? "Transfer To:" : "Approve To:"}</span>
+            <input type="checkbox" onChange={handleToggle} defaultChecked className="toggle" />
+          </div>
           <AddressInput
-            value={transferToAddress}
+            value={toAddress}
             placeholder="receiver address"
-            onChange={newValue => setTransferToAddress(newValue)}
+            onChange={newValue => setToAddress(newValue)}
           />
         </div>
         <div className="card-actions justify-end">
@@ -48,16 +56,22 @@ export const NFTCard = ({ nft }: { nft: Collectible }) => {
             className="btn btn-secondary btn-md px-8 tracking-wide"
             onClick={() => {
               try {
-                writeContractAsync({
-                  functionName: "transferFrom",
-                  args: [nft.owner, transferToAddress, BigInt(nft.id.toString())],
-                });
+                if (isTransferChecked)
+                  writeContractAsync({
+                    functionName: "transferFrom",
+                    args: [nft.owner, toAddress, BigInt(nft.id.toString())],
+                  });
+                else
+                  writeContractAsync({
+                    functionName: "approve",
+                    args: [toAddress, BigInt(nft.id.toString())],
+                  });
               } catch (err) {
                 console.error("Error calling transferFrom function");
               }
             }}
           >
-            Send
+            {isTransferChecked ? "Send" : "Approve"}
           </button>
         </div>
       </div>

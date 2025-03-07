@@ -3,14 +3,14 @@ import { ethers } from "hardhat";
 import { YourCollectible } from "../typechain-types/contracts";
 import { YourContract } from "../typechain-types";
 import { type HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ContractTransactionReceipt, EventLog } from "ethers";
+import { ContractTransactionReceipt, EventLog, AddressLike } from "ethers";
 
 describe("YourCollectible", function () {
   // We define a fixture to reuse the same setup in every test.
   let yourCollectible: YourCollectible, yourCollectibleAddress: string;
   let yourContract: YourContract, yourContractAddress: string;
   let owner: HardhatEthersSigner, user1: HardhatEthersSigner, user2: HardhatEthersSigner, user3: HardhatEthersSigner;
-  let user2TokenId_0: number;
+  let tokenId_0: number, tokenId_1: number;
   before(async () => {
     // Get the Signers object from ethers
     [owner, user1, user2, user3] = await ethers.getSigners();
@@ -54,31 +54,62 @@ describe("YourCollectible", function () {
       ]);
       const decodedLog = iface.decodeEventLog("Transfer", transferEventLog.data, transferEventLog.topics);
 
-      user2TokenId_0 = decodedLog.tokenId as number;
+      tokenId_0 = decodedLog.tokenId as number;
 
       // get the owner of the token
-      expect(await yourCollectible.connect(user1).ownerOf(user2TokenId_0)).to.equal(user2.address);
+      expect(await yourCollectible.connect(user1).ownerOf(tokenId_0)).to.equal(user2.address);
       expect(await yourCollectible.connect(user1).balanceOf(user2.address)).to.equal(1);
     });
   });
 
   describe("Transfer", function () {
     it("Should not allow transfer from non-owner user1", async function () {
-      await expect(yourCollectible.connect(user1).transferFrom(user2.address, user3.address, user2TokenId_0)).to.be
-        .reverted;
+      await expect(yourCollectible.connect(user1).transferFrom(user2.address, user3.address, tokenId_0)).to.be.reverted;
     });
 
     it("Should allow transfer from non-owner user1 after approving them", async function () {
       // approve user1
-      await yourCollectible.connect(user2).approve(user1.address, user2TokenId_0);
+      await yourCollectible.connect(user2).approve(user1.address, tokenId_0);
 
-      const txn = await yourCollectible.connect(user1).transferFrom(user2.address, user3.address, user2TokenId_0);
-      //   await txn.wait(); // Wait for transaction to be mined
+      const txn = await yourCollectible.connect(user1).transferFrom(user2.address, user3.address, tokenId_0);
 
       // get the owner of the token
-      expect(await yourCollectible.connect(user1).ownerOf(user2TokenId_0)).to.equal(user3.address);
+      expect(await yourCollectible.connect(user1).ownerOf(tokenId_0)).to.equal(user3.address);
       expect(await yourCollectible.connect(user1).balanceOf(user2.address)).to.equal(0);
       expect(await yourCollectible.connect(user1).balanceOf(user3.address)).to.equal(1);
+    });
+
+    it("Should add approved to the approved list", async function () {
+      const txn = await yourCollectible.connect(user1).mintItem(user1.address, "https://www.example.com/nft2");
+      const receipt = await txn.wait();
+
+      // Extract event data
+      const transferEventLog = receipt!.logs.find(l => (l as EventLog).fragment.name === "Transfer") as EventLog;
+      const iface = new ethers.Interface([
+        "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
+      ]);
+      const decodedLog = iface.decodeEventLog("Transfer", transferEventLog.data, transferEventLog.topics);
+
+      tokenId_1 = decodedLog.tokenId as number;
+
+      // approve user2
+      await yourCollectible.connect(user3).approve(user2.address, tokenId_0);
+      await yourCollectible.connect(user1).approve(user2.address, tokenId_1);
+
+      // get the approved balances and tokens
+      expect(await yourCollectible.connect(user1).approvedBalanceOf(user2.address)).to.equal(2);
+      expect(await yourCollectible.connect(user1).approvedTokenByIndex(user2.address, 0)).to.equal(tokenId_0);
+      expect(await yourCollectible.connect(user1).approvedTokenByIndex(user2.address, 1)).to.equal(tokenId_1);
+
+      // remove approval
+      await yourCollectible.connect(user1).approve(ethers.ZeroAddress, tokenId_1);
+      expect(await yourCollectible.connect(user1).approvedBalanceOf(user2.address)).to.equal(1);
+      expect(await yourCollectible.connect(user1).approvedTokenByIndex(user2.address, 0)).to.equal(tokenId_0);
+
+      // switch approval
+      await yourCollectible.connect(user3).approve(user1.address, tokenId_0);
+      expect(await yourCollectible.connect(user3).approvedBalanceOf(user2.address)).to.equal(0);
+      expect(await yourCollectible.connect(user3).approvedBalanceOf(user1.address)).to.equal(1);
     });
   });
 });
