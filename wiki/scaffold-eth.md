@@ -30,4 +30,7 @@ Here are the main components of a development stack for building dApps with Scaf
 
 This setup provides developers with all the necessary tools to efficiently build, test, and deploy Ethereum-based decentralized applications.
 
+<img width="1478" height="660" alt="image" src="https://github.com/user-attachments/assets/5058c631-0d9a-4e0f-a7f4-ce119bda7de1" />
+
+
 **This course** uses **Scaffold-ETH 2** ([docs](https://docs.scaffoldeth.io), [website](https://scaffoldeth.io)) inside each lesson folder.
