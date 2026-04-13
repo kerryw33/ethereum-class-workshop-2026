@@ -1,0 +1,9 @@
+# folders
+../../solutions
+artifacts
+cache
+contracts
+node_modules/
+typechain-types
+# files
+**/*.json
