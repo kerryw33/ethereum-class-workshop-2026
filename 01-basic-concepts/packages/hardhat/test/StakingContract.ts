@@ -86,18 +86,18 @@ describe("StakingContract", function () {
       expect(await stakingContract.getUserCount()).to.equal(1);
     });
 
-    // it("Should allow a re-entry attack", async function () {
-    //   const transactionResponse = await attackerContract
-    //     .connect(user3)
-    //     .attack(stakingContractAddress, { value: ethers.parseUnits("2", "ether") });
-    //   expect(await ethers.provider.getBalance(stakingContractAddress)).to.equal(ethers.parseUnits("0", "ether"));
-    // });
+    it("Should allow a re-entry attack", async function () {
+      const transactionResponse = await attackerContract
+        .connect(user3)
+        .attack(stakingContractAddress, { value: ethers.parseUnits("2", "ether") });
+      expect(await ethers.provider.getBalance(stakingContractAddress)).to.equal(ethers.parseUnits("0", "ether"));
+    });
 
-    it("Should not allow a re-entry attack", async function () {
+    /*it("Should not allow a re-entry attack", async function () {
       await expect(
         attackerContract.connect(user3).attack(stakingContractAddress, { value: ethers.parseUnits("2", "ether") }),
       ).to.be.reverted;
       expect(await ethers.provider.getBalance(stakingContractAddress)).to.equal(ethers.parseUnits("20", "ether"));
-    });
+    });*/
   });
 });

